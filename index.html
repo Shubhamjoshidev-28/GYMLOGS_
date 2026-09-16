@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymLogs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #131316;
+    --panel: #1b1b1f;
+    --panel-raised: #212126;
+    --border: #2c2c32;
+    --primary: #ff5a36;
+    --primary-dim: #7a2c1c;
+    --gold: #d9a441;
+    --text: #f3f1ec;
+    --muted: #98969f;
+    --danger: #e5484d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 40px;
+    line-height: 1.55;
+  }
+
+  .wrap { max-width: 540px; margin: 0 auto; padding: 0 18px; }
+
+  .hero {
+    padding: 34px 18px 26px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #1a1a1e 0%, var(--bg) 100%);
+  }
+  .hero-inner { max-width: 540px; margin: 0 auto; }
+  .hero h1 {
+    font-family: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+    font-size: 46px;
+    letter-spacing: 1px;
+    margin: 0;
+    color: var(--text);
+    line-height: 1;
+  }
+  .hero h1 span { color: var(--primary); }
+  .hero p { margin: 8px 0 0; color: var(--muted); font-size: 15px; max-width: 34ch; }
+
+  h2 {
+    font-family: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.4px;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .section-hint { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
+
+  section {
+    margin: 22px 0;
+    padding: 20px;
+    background: var(--panel);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    scroll-margin-top: 18px;
+  }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+
+  input, select, button {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-size: 15px;
+    background: var(--panel-raised);
+    color: var(--text);
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+
+  button {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #1a0d08;
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    transition: filter 0.15s, transform 0.08s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--text); border-color: var(--border); font-weight: 600; }
+  button.ghost:hover { border-color: var(--primary); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
+  .chip {
+    padding: 8px 14px;
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--primary); }
+  .chip.selected { background: var(--primary); color: #1a0d08; border-color: var(--primary); font-weight: 700; }
+  .chip .rm { opacity: 0.55; font-weight: 800; }
+  .chip .rm:hover { opacity: 1; }
+
+  .empty { color: var(--muted); font-style: italic; font-size: 13.5px; text-align: center; padding: 16px 0; }
+
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-head button { width: auto; padding: 7px 15px; font-size: 16px; }
+  .cal-title { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 20px; letter-spacing: 0.5px; }
+
+  .cal-weekdays, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-weekdays { margin-bottom: 6px; }
+  .cal-weekdays span { text-align: center; font-size: 10.5px; color: var(--muted); letter-spacing: 0.5px; }
+
+  .cal-day {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--panel-raised);
+    position: relative;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cal-day.blank { border: none; background: transparent; cursor: default; }
+  .cal-day.today { border-color: var(--gold); color: var(--gold); font-weight: 700; }
+  .cal-day.has-log::after {
+    content: ''; position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--primary);
+  }
+  .cal-day.picked { background: var(--primary); color: #1a0d08; border-color: var(--primary); font-weight: 700; }
+  .cal-day.picked::after { background: #1a0d08; }
+  .cal-day:not(.blank):hover { border-color: var(--primary); }
+
+  .day-detail-title { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+  .day-detail-title .cal-title { font-size: 18px; }
+  .day-detail-title .today-tag { font-size: 11px; color: var(--gold); border: 1px solid var(--gold); border-radius: 999px; padding: 2px 9px; }
+
+  .log-entry {
+    background: var(--panel-raised);
+    padding: 13px 14px;
+    margin: 9px 0;
+    border-radius: 10px;
+    border-left: 3px solid var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .log-entry .name { font-size: 15px; font-weight: 600; }
+  .log-entry .meta { color: var(--gold); font-size: 13.5px; margin-top: 2px; }
+  .log-entry .del { width: auto; background: transparent; border: 1px solid var(--danger); color: var(--danger); font-size: 12px; padding: 6px 10px; font-weight: 600; }
+  .log-entry .del:hover { background: var(--danger); color: #fff; }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f5f2; --panel: #ffffff; --panel-raised: #f0efec; --border: #e2e0da;
+      --text: #201f1d; --muted: #6b6963;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Gym<span>Logs</span></h1>
+    <p>Keep a running list of the exercises you do, log the weight you moved each day, and jump straight to any day's session from the calendar.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- EXERCISES -->
+  <section>
+    <h2>Exercises</h2>
+    <p class="section-hint">Build the list of exercises you usually do. You'll pick from these every time you log.</p>
+    <div class="row">
+      <input type="text" id="new-exercise" placeholder="e.g. Bench Press" autocomplete="off">
+      <button id="add-exercise-btn" style="width:auto; flex:0 0 84px;">Add</button>
+    </div>
+    <div class="chip-row" id="exercise-list"></div>
+    <p class="empty" id="exercise-empty" style="display:none;">No exercises yet — add your first one above.</p>
+  </section>
+
+  <!-- LOG A SET -->
+  <section>
+    <h2>Log a Set</h2>
+    <p class="section-hint">Pick an exercise, enter the weight and reps, and it's added to today.</p>
+    <div class="chip-row" id="log-picker"></div>
+    <p class="empty" id="log-empty" style="display:none;">Add an exercise above first.</p>
+    <div id="log-inputs" style="display:none;">
+      <div class="row">
+        <input type="number" id="log-weight" placeholder="Weight (kg)" min="0" step="0.5">
+        <input type="number" id="log-reps" placeholder="Reps" min="0" step="1">
+      </div>
+      <button id="log-btn">Add to Today's Log</button>
+      <p class="section-hint" id="log-hint" style="margin:6px 0 0;"></p>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section>
+    <h2>Calendar</h2>
+    <p class="section-hint">Days with a dot have logged sets. Tap any day to jump to it below.</p>
+    <div class="cal-head">
+      <button class="ghost" id="prev-month">‹</button>
+      <span class="cal-title" id="cal-title"></span>
+      <button class="ghost" id="next-month">›</button>
+    </div>
+    <div class="cal-weekdays" id="cal-weekdays"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </section>
+
+  <!-- DAY DETAIL -->
+  <section id="day-detail">
+    <div class="day-detail-title">
+      <span class="cal-title" id="day-detail-title">Today</span>
+      <span class="today-tag" id="today-tag" style="display:none;">TODAY</span>
+    </div>
+    <p class="section-hint">Exercises logged on this day.</p>
+    <div id="day-log-list"></div>
+  </section>
+
+</div>
+
+<script>
+// =============================================
+// GYMLOGS — exercises, daily weight/rep logging, calendar that jumps to a day's log
+// =============================================
+
+const state = {
+  exercises: JSON.parse(localStorage.getItem('gl2-exercises') || '[]'),   // [{id, name}]
+  logs: JSON.parse(localStorage.getItem('gl2-logs') || '[]'),             // [{id, date, exerciseId, weight, reps}]
+  selectedLogExerciseId: null,
+  viewMonth: new Date().getMonth(),
+  viewYear: new Date().getFullYear(),
+  selectedDate: null, // defaults to today
+};
+
+// DOM
+const newExerciseInput = document.getElementById('new-exercise');
+const addExerciseBtn = document.getElementById('add-exercise-btn');
+const exerciseList = document.getElementById('exercise-list');
+const exerciseEmpty = document.getElementById('exercise-empty');
+
+const logPicker = document.getElementById('log-picker');
+const logEmpty = document.getElementById('log-empty');
+const logInputs = document.getElementById('log-inputs');
+const logWeight = document.getElementById('log-weight');
+const logReps = document.getElementById('log-reps');
+const logBtn = document.getElementById('log-btn');
+const logHint = document.getElementById('log-hint');
+
+const prevMonthBtn = document.getElementById('prev-month');
+const nextMonthBtn = document.getElementById('next-month');
+const calTitle = document.getElementById('cal-title');
+const calWeekdays = document.getElementById('cal-weekdays');
+const calGrid = document.getElementById('cal-grid');
+
+const dayDetail = document.getElementById('day-detail');
+const dayDetailTitle = document.getElementById('day-detail-title');
+const todayTag = document.getElementById('today-tag');
+const dayLogList = document.getElementById('day-log-list');
+
+// UTILITIES
+const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayStr = () => fmtDate(new Date());
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const nameOf = (id) => (state.exercises.find(e => e.id === id) || {}).name || 'Unknown';
+const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const prettyDate = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+function save() {
+  localStorage.setItem('gl2-exercises', JSON.stringify(state.exercises));
+  localStorage.setItem('gl2-logs', JSON.stringify(state.logs));
+}
+
+// ===== EXERCISES =====
+function addExercise() {
+  const name = newExerciseInput.value.trim();
+  if (!name) return;
+  if (state.exercises.some(e => e.name.toLowerCase() === name.toLowerCase())) { newExerciseInput.value = ''; return; }
+  state.exercises.push({ id: uid(), name });
+  newExerciseInput.value = '';
+  save();
+  renderAll();
+}
+
+function deleteExercise(id) {
+  state.exercises = state.exercises.filter(e => e.id !== id);
+  if (state.selectedLogExerciseId === id) state.selectedLogExerciseId = null;
+  save();
+  renderAll();
+}
+
+function renderExerciseList() {
+  exerciseList.innerHTML = '';
+  exerciseEmpty.style.display = state.exercises.length === 0 ? 'block' : 'none';
+  state.exercises.forEach(ex => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    const armed = state.armedDeleteExerciseId === ex.id;
+    chip.innerHTML = `<span>${esc(ex.name)}</span><span class="rm">${armed ? 'confirm ✕' : '✕'}</span>`;
+    const rm = chip.querySelector('.rm');
+    rm.onclick = (e) => {
+      e.stopPropagation();
+      if (armed) {
+        deleteExercise(ex.id);
+      } else {
+        state.armedDeleteExerciseId = ex.id;
+        renderExerciseList();
+        setTimeout(() => {
+          if (state.armedDeleteExerciseId === ex.id) { state.armedDeleteExerciseId = null; renderExerciseList(); }
+        }, 2500);
+      }
+    };
+    exerciseList.appendChild(chip);
+  });
+}
+
+// ===== LOG A SET =====
+function renderLogPicker() {
+  logPicker.innerHTML = '';
+  logEmpty.style.display = state.exercises.length === 0 ? 'block' : 'none';
+  state.exercises.forEach(ex => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.selectedLogExerciseId === ex.id ? ' selected' : '');
+    chip.textContent = ex.name;
+    chip.onclick = () => {
+      state.selectedLogExerciseId = (state.selectedLogExerciseId === ex.id) ? null : ex.id;
+      renderLogPicker();
+      logInputs.style.display = state.selectedLogExerciseId ? 'block' : 'none';
+    };
+    logPicker.appendChild(chip);
+  });
+  logInputs.style.display = state.selectedLogExerciseId ? 'block' : 'none';
+}
+
+function addLog() {
+  if (!state.selectedLogExerciseId) return;
+  const weight = logWeight.value.trim();
+  const reps = logReps.value.trim();
+  if (!weight && !reps) {
+    logHint.textContent = 'Enter a weight or rep count.';
+    logHint.style.color = 'var(--danger)';
+    return;
+  }
+  logHint.textContent = '';
+
+  state.logs.push({
+    id: uid(),
+    date: todayStr(),
+    exerciseId: state.selectedLogExerciseId,
+    weight: weight ? parseFloat(weight) : null,
+    reps: reps ? parseInt(reps) : null,
+  });
+
+  logWeight.value = '';
+  logReps.value = '';
+  save();
+
+  // jump the calendar/day-view to today so the new entry is visible
+  state.viewMonth = new Date().getMonth();
+  state.viewYear = new Date().getFullYear();
+  state.selectedDate = todayStr();
+
+  renderCalendar();
+  renderDayDetail();
+}
+
+// ===== CALENDAR =====
+function renderWeekdayHeader() {
+  calWeekdays.innerHTML = '';
+  ['S','M','T','W','T','F','S'].forEach(w => {
+    const el = document.createElement('span');
+    el.textContent = w;
+    calWeekdays.appendChild(el);
+  });
+}
+
+function renderCalendar() {
+  const year = state.viewYear, month = state.viewMonth;
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = first.getDay();
+  const selected = state.selectedDate || todayStr();
+
+  calTitle.textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  calGrid.innerHTML = '';
+
+  for (let i = 0; i < startDay; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'cal-day blank';
+    calGrid.appendChild(blank);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const hasLog = state.logs.some(l => l.date === dateStr);
+    const isToday = dateStr === todayStr();
+    const isPicked = dateStr === selected;
+
+    const el = document.createElement('div');
+    el.className = `cal-day ${isToday ? 'today' : ''} ${hasLog ? 'has-log' : ''} ${isPicked ? 'picked' : ''}`;
+    el.textContent = day;
+    el.onclick = () => {
+      state.selectedDate = dateStr;
+      renderCalendar();
+      renderDayDetail();
+      dayDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    calGrid.appendChild(el);
+  }
+}
+
+prevMonthBtn.onclick = () => {
+  state.viewMonth--;
+  if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+  renderCalendar();
+};
+nextMonthBtn.onclick = () => {
+  state.viewMonth++;
+  if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+  renderCalendar();
+};
+
+// ===== DAY DETAIL (what the calendar takes you to) =====
+function renderDayDetail() {
+  const dateStr = state.selectedDate || todayStr();
+  const isToday = dateStr === todayStr();
+  dayDetailTitle.textContent = prettyDate(dateStr);
+  todayTag.style.display = isToday ? 'inline-block' : 'none';
+
+  const entries = state.logs.filter(l => l.date === dateStr);
+  dayLogList.innerHTML = '';
+  if (entries.length === 0) {
+    dayLogList.innerHTML = '<p class="empty">Nothing logged on this day.</p>';
+    return;
+  }
+
+  entries.forEach(log => {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    const parts = [];
+    if (log.weight !== null && log.weight !== undefined) parts.push(`${log.weight}kg`);
+    if (log.reps !== null && log.reps !== undefined) parts.push(`${log.reps} reps`);
+    const armed = state.armedDeleteLogId === log.id;
+    div.innerHTML = `
+      <div>
+        <div class="name">${esc(nameOf(log.exerciseId))}</div>
+        <div class="meta">${parts.join(' × ') || '—'}</div>
+      </div>
+      <button class="del">${armed ? 'Confirm?' : 'Delete'}</button>
+    `;
+    div.querySelector('.del').onclick = () => {
+      if (armed) {
+        deleteLog(log.id);
+      } else {
+        state.armedDeleteLogId = log.id;
+        renderDayDetail();
+        setTimeout(() => {
+          if (state.armedDeleteLogId === log.id) { state.armedDeleteLogId = null; renderDayDetail(); }
+        }, 2500);
+      }
+    };
+    dayLogList.appendChild(div);
+  });
+}
+
+function deleteLog(id) {
+  state.logs = state.logs.filter(l => l.id !== id);
+  save();
+  renderCalendar();
+  renderDayDetail();
+}
+
+addExerciseBtn.onclick = addExercise;
+newExerciseInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addExercise(); });
+logBtn.onclick = addLog;
+
+// ===== INIT =====
+function renderAll() {
+  renderExerciseList();
+  renderLogPicker();
+  renderCalendar();
+  renderDayDetail();
+}
+
+renderWeekdayHeader();
+renderAll();
+</script>
+</body>
+</html>
