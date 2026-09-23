@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" href="image.ico">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #131316;
@@ -172,6 +173,15 @@
   .log-entry .del { width: auto; background: transparent; border: 1px solid var(--danger); color: var(--danger); font-size: 12px; padding: 6px 10px; font-weight: 600; }
   .log-entry .del:hover { background: var(--danger); color: #fff; }
 
+  .auth-message { min-height: 18px; }
+  .migration-banner {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--panel-raised);
+    border-radius: 10px;
+    border: 1px solid var(--gold);
+  }
+
   @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
       --bg: #f6f5f2; --panel: #ffffff; --panel-raised: #f0efec; --border: #e2e0da;
@@ -191,74 +201,133 @@
 
 <div class="wrap">
 
-  <!-- EXERCISES -->
-  <section>
-    <h2>Exercises</h2>
-    <p class="section-hint">Build the list of exercises you usually do. You'll pick from these every time you log.</p>
-    <div class="row">
-      <input type="text" id="new-exercise" placeholder="e.g. Bench Press" autocomplete="off">
-      <button id="add-exercise-btn" style="width:auto; flex:0 0 84px;">Add</button>
-    </div>
-    <div class="chip-row" id="exercise-list"></div>
-    <p class="empty" id="exercise-empty" style="display:none;">No exercises yet — add your first one above.</p>
-  </section>
+  <!-- ACCOUNT / AUTH -->
+  <section id="auth-section">
+    <h2>Account</h2>
+    <p class="section-hint" id="auth-loading">Checking session...</p>
 
-  <!-- LOG A SET -->
-  <section>
-    <h2>Log a Set</h2>
-    <p class="section-hint">Pick an exercise, enter the weight and reps, and it's added to today.</p>
-    <div class="chip-row" id="log-picker"></div>
-    <p class="empty" id="log-empty" style="display:none;">Add an exercise above first.</p>
-    <div id="log-inputs" style="display:none;">
-      <div class="row">
-        <input type="number" id="log-weight" placeholder="Weight (kg)" min="0" step="0.5">
-        <input type="number" id="log-reps" placeholder="Reps" min="0" step="1">
+    <div id="auth-forms" style="display:none;">
+      <div class="chip-row">
+        <div class="chip selected" id="tab-login">Log In</div>
+        <div class="chip" id="tab-register">Register</div>
       </div>
-      <button id="log-btn">Add to Today's Log</button>
-      <p class="section-hint" id="log-hint" style="margin:6px 0 0;"></p>
+
+      <div id="login-form">
+        <label>Email</label>
+        <input type="email" id="login-email" autocomplete="email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+        <button id="login-btn" style="margin-top:12px;">Log In</button>
+      </div>
+
+      <div id="register-form" style="display:none;">
+        <label>Email</label>
+        <input type="email" id="register-email" autocomplete="email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="register-password" autocomplete="new-password" placeholder="At least 6 characters">
+        <button id="register-btn" style="margin-top:12px;">Create Account</button>
+      </div>
+
+      <p class="section-hint auth-message" id="auth-message"></p>
+    </div>
+
+    <div id="auth-user-info" style="display:none;">
+      <p class="section-hint">Logged in as <strong id="user-email-display"></strong></p>
+      <button class="ghost" id="logout-btn">Log Out</button>
+    </div>
+
+    <div class="migration-banner" id="migration-banner" style="display:none;">
+      <p class="section-hint" id="migration-text" style="margin:0 0 10px;"></p>
+      <button id="migrate-btn" style="width:auto;">Import Local Data</button>
     </div>
   </section>
 
-  <!-- CALENDAR -->
-  <section>
-    <h2>Calendar</h2>
-    <p class="section-hint">Days with a dot have logged sets. Tap any day to jump to it below.</p>
-    <div class="cal-head">
-      <button class="ghost" id="prev-month">‹</button>
-      <span class="cal-title" id="cal-title"></span>
-      <button class="ghost" id="next-month">›</button>
-    </div>
-    <div class="cal-weekdays" id="cal-weekdays"></div>
-    <div class="cal-grid" id="cal-grid"></div>
-  </section>
+  <!-- PRIVATE APP CONTENT — hidden until logged in -->
+  <div id="app-content" style="display:none;">
 
-  <!-- DAY DETAIL -->
-  <section id="day-detail">
-    <div class="day-detail-title">
-      <span class="cal-title" id="day-detail-title">Today</span>
-      <span class="today-tag" id="today-tag" style="display:none;">TODAY</span>
-    </div>
-    <p class="section-hint">Exercises logged on this day.</p>
-    <div id="day-log-list"></div>
-  </section>
+    <!-- EXERCISES -->
+    <section>
+      <h2>Exercises</h2>
+      <p class="section-hint">Build the list of exercises you usually do. You'll pick from these every time you log.</p>
+      <div class="row">
+        <input type="text" id="new-exercise" placeholder="e.g. Bench Press" autocomplete="off">
+        <button id="add-exercise-btn" style="width:auto; flex:0 0 84px;">Add</button>
+      </div>
+      <div class="chip-row" id="exercise-list"></div>
+      <p class="empty" id="exercise-empty" style="display:none;">No exercises yet — add your first one above.</p>
+    </section>
+
+    <!-- LOG A SET -->
+    <section>
+      <h2>Log a Set</h2>
+      <p class="section-hint">Pick an exercise, enter the weight and reps, and it's added to today.</p>
+      <div class="chip-row" id="log-picker"></div>
+      <p class="empty" id="log-empty" style="display:none;">Add an exercise above first.</p>
+      <div id="log-inputs" style="display:none;">
+        <div class="row">
+          <input type="number" id="log-weight" placeholder="Weight (kg)" min="0" step="0.5">
+          <input type="number" id="log-reps" placeholder="Reps" min="0" step="1">
+        </div>
+        <button id="log-btn">Add to Today's Log</button>
+        <p class="section-hint" id="log-hint" style="margin:6px 0 0;"></p>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section>
+      <h2>Calendar</h2>
+      <p class="section-hint">Days with a dot have logged sets. Tap any day to jump to it below.</p>
+      <div class="cal-head">
+        <button class="ghost" id="prev-month">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="ghost" id="next-month">›</button>
+      </div>
+      <div class="cal-weekdays" id="cal-weekdays"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </section>
+
+    <!-- DAY DETAIL -->
+    <section id="day-detail">
+      <div class="day-detail-title">
+        <span class="cal-title" id="day-detail-title">Today</span>
+        <span class="today-tag" id="today-tag" style="display:none;">TODAY</span>
+      </div>
+      <p class="section-hint">Exercises logged on this day.</p>
+      <div id="day-log-list"></div>
+    </section>
+
+  </div>
 
 </div>
 
 <script>
 // =============================================
-// GYMLOGS — exercises, daily weight/rep logging, calendar that jumps to a day's log
+// GYMLOGS — exercises, daily weight/rep logging, calendar, Supabase-backed auth + storage
 // =============================================
 
+// ---- SUPABASE SETUP ----
+// Paste your Supabase publishable (anon) key below. Everything else is already wired up.
+const SUPABASE_URL = "https://seeysecvispzuwgzmgay.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TIwMmibp-Nkx3q8Shk5DAQ_-j6Q7hQ7";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
+
 const state = {
-  exercises: JSON.parse(localStorage.getItem('gl2-exercises') || '[]'),   // [{id, name}]
-  logs: JSON.parse(localStorage.getItem('gl2-logs') || '[]'),             // [{id, date, exerciseId, weight, reps}]
+  exercises: [],                 // [{id, name}] — id is the Supabase row id
+  logs: [],                      // [{id, date, exerciseId, weight, reps}]
   selectedLogExerciseId: null,
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
-  selectedDate: null, // defaults to today
+  selectedDate: null,            // defaults to today
+  currentUser: null,
+  armedDeleteExerciseId: null,
+  armedDeleteLogId: null,
 };
 
-// DOM
+// DOM — existing app elements
 const newExerciseInput = document.getElementById('new-exercise');
 const addExerciseBtn = document.getElementById('add-exercise-btn');
 const exerciseList = document.getElementById('exercise-list');
@@ -283,34 +352,217 @@ const dayDetailTitle = document.getElementById('day-detail-title');
 const todayTag = document.getElementById('today-tag');
 const dayLogList = document.getElementById('day-log-list');
 
+// DOM — auth elements
+const authLoading = document.getElementById('auth-loading');
+const authForms = document.getElementById('auth-forms');
+const tabLogin = document.getElementById('tab-login');
+const tabRegister = document.getElementById('tab-register');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const loginEmail = document.getElementById('login-email');
+const loginPassword = document.getElementById('login-password');
+const loginBtn = document.getElementById('login-btn');
+const registerEmail = document.getElementById('register-email');
+const registerPassword = document.getElementById('register-password');
+const registerBtn = document.getElementById('register-btn');
+const authMessage = document.getElementById('auth-message');
+const authUserInfo = document.getElementById('auth-user-info');
+const userEmailDisplay = document.getElementById('user-email-display');
+const logoutBtn = document.getElementById('logout-btn');
+const migrationBanner = document.getElementById('migration-banner');
+const migrationText = document.getElementById('migration-text');
+const migrateBtn = document.getElementById('migrate-btn');
+const appContent = document.getElementById('app-content');
+
 // UTILITIES
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const todayStr = () => fmtDate(new Date());
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const nameOf = (id) => (state.exercises.find(e => e.id === id) || {}).name || 'Unknown';
 const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 const prettyDate = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-function save() {
-  localStorage.setItem('gl2-exercises', JSON.stringify(state.exercises));
-  localStorage.setItem('gl2-logs', JSON.stringify(state.logs));
+// =============================================
+// AUTH — UI helpers
+// =============================================
+function switchAuthTab(tab) {
+  if (tab === 'login') {
+    tabLogin.classList.add('selected');
+    tabRegister.classList.remove('selected');
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+  } else {
+    tabRegister.classList.add('selected');
+    tabLogin.classList.remove('selected');
+    registerForm.style.display = 'block';
+    loginForm.style.display = 'none';
+  }
+  setAuthMessage('', false);
+}
+tabLogin.onclick = () => switchAuthTab('login');
+tabRegister.onclick = () => switchAuthTab('register');
+
+function setAuthMessage(msg, isError) {
+  authMessage.textContent = msg || '';
+  authMessage.style.color = isError ? 'var(--danger)' : 'var(--muted)';
 }
 
-// ===== EXERCISES =====
-function addExercise() {
-  const name = newExerciseInput.value.trim();
-  if (!name) return;
-  if (state.exercises.some(e => e.name.toLowerCase() === name.toLowerCase())) { newExerciseInput.value = ''; return; }
-  state.exercises.push({ id: uid(), name });
-  newExerciseInput.value = '';
-  save();
+function showAuthedUI(user) {
+  authForms.style.display = 'none';
+  authUserInfo.style.display = 'block';
+  userEmailDisplay.textContent = user.email;
+  appContent.style.display = 'block';
+}
+
+function showUnauthedUI() {
+  authForms.style.display = 'block';
+  authUserInfo.style.display = 'none';
+  appContent.style.display = 'none';
+  migrationBanner.style.display = 'none';
+  state.exercises = [];
+  state.logs = [];
+  state.selectedLogExerciseId = null;
+}
+
+// =============================================
+// AUTH — actions
+// =============================================
+async function handleRegister() {
+  const email = registerEmail.value.trim();
+  const password = registerPassword.value;
+  if (!email || !password) { setAuthMessage('Enter an email and password.', true); return; }
+  registerBtn.disabled = true;
+  setAuthMessage('Creating account...', false);
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  registerBtn.disabled = false;
+  if (error) { setAuthMessage(error.message, true); return; }
+  if (data.session) {
+    setAuthMessage('', false);
+  } else {
+    setAuthMessage('Account created. Check your email to confirm, then log in.', false);
+  }
+}
+
+async function handleLogin() {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+  if (!email || !password) { setAuthMessage('Enter an email and password.', true); return; }
+  loginBtn.disabled = true;
+  setAuthMessage('Logging in...', false);
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  loginBtn.disabled = false;
+  if (error) { setAuthMessage(error.message, true); return; }
+  setAuthMessage('', false);
+}
+
+async function handleLogout() {
+  logoutBtn.disabled = true;
+  await supabaseClient.auth.signOut();
+  logoutBtn.disabled = false;
+}
+
+loginBtn.onclick = handleLogin;
+registerBtn.onclick = handleRegister;
+logoutBtn.onclick = handleLogout;
+loginPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+registerPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRegister(); });
+
+// =============================================
+// AUTH — session lifecycle
+// =============================================
+// Fires on sign-in, sign-out, and token refresh (including the initial check on page load).
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session && session.user) {
+    onSignedIn(session.user);
+  } else {
+    state.currentUser = null;
+    showUnauthedUI();
+  }
+});
+
+async function onSignedIn(user) {
+  state.currentUser = user;
+  showAuthedUI(user);
+  await loadAllData();
+  checkMigrationAvailable();
+}
+
+async function initAuth() {
+  authLoading.style.display = 'block';
+  authForms.style.display = 'none';
+  const { data } = await supabaseClient.auth.getSession();
+  authLoading.style.display = 'none';
+  authForms.style.display = 'block';
+  if (data.session && data.session.user) {
+    await onSignedIn(data.session.user);
+  } else {
+    showUnauthedUI();
+  }
+}
+
+// =============================================
+// DATABASE — load
+// =============================================
+async function loadAllData() {
+  // RLS policies scope these selects to the logged-in user automatically.
+  const { data: exData, error: exErr } = await supabaseClient
+    .from('exercises')
+    .select('id, name')
+    .order('created_at', { ascending: true });
+  if (exErr) { console.error(exErr); setAuthMessage('Failed to load exercises: ' + exErr.message, true); }
+  state.exercises = (exData || []).map(e => ({ id: e.id, name: e.name }));
+
+  const { data: logData, error: logErr } = await supabaseClient
+    .from('logs')
+    .select('id, date, exercise_id, weight, reps')
+    .order('created_at', { ascending: true });
+  if (logErr) { console.error(logErr); setAuthMessage('Failed to load logs: ' + logErr.message, true); }
+  state.logs = (logData || []).map(l => ({ id: l.id, date: l.date, exerciseId: l.exercise_id, weight: l.weight, reps: l.reps }));
+
   renderAll();
 }
 
-function deleteExercise(id) {
+// =============================================
+// EXERCISES
+// =============================================
+async function addExercise() {
+  if (!state.currentUser) return;
+  const name = newExerciseInput.value.trim();
+  if (!name) return;
+  if (state.exercises.some(e => e.name.toLowerCase() === name.toLowerCase())) { newExerciseInput.value = ''; return; }
+
+  addExerciseBtn.disabled = true;
+  const { data, error } = await supabaseClient
+    .from('exercises')
+    .insert({ 
+      id: crypto.randomUUID(),
+      user_id: state.currentUser.id,
+      name: name
+    })
+    .select('id, name')
+    .single();
+  addExerciseBtn.disabled = false;
+
+  if (error) { console.error(error); alert('Could not add exercise: ' + error.message); return; }
+  state.exercises.push({ id: data.id, name: data.name });
+  newExerciseInput.value = '';
+  renderAll();
+}
+
+async function deleteExercise(id) {
+  if (!state.currentUser) return;
+  // Remove dependent logs first so a foreign-key constraint on logs.exercise_id doesn't block the delete.
+  const relatedLogIds = state.logs.filter(l => l.exerciseId === id).map(l => l.id);
+  if (relatedLogIds.length) {
+    const { error: logDelErr } = await supabaseClient.from('logs').delete().in('id', relatedLogIds);
+    if (logDelErr) { console.error(logDelErr); alert('Could not delete related logs: ' + logDelErr.message); return; }
+    state.logs = state.logs.filter(l => l.exerciseId !== id);
+  }
+
+  const { error } = await supabaseClient.from('exercises').delete().eq('id', id);
+  if (error) { console.error(error); alert('Could not delete exercise: ' + error.message); return; }
+
   state.exercises = state.exercises.filter(e => e.id !== id);
   if (state.selectedLogExerciseId === id) state.selectedLogExerciseId = null;
-  save();
   renderAll();
 }
 
@@ -339,7 +591,9 @@ function renderExerciseList() {
   });
 }
 
-// ===== LOG A SET =====
+// =============================================
+// LOG A SET
+// =============================================
 function renderLogPicker() {
   logPicker.innerHTML = '';
   logEmpty.style.display = state.exercises.length === 0 ? 'block' : 'none';
@@ -357,7 +611,8 @@ function renderLogPicker() {
   logInputs.style.display = state.selectedLogExerciseId ? 'block' : 'none';
 }
 
-function addLog() {
+async function addLog() {
+  if (!state.currentUser) return;
   if (!state.selectedLogExerciseId) return;
   const weight = logWeight.value.trim();
   const reps = logReps.value.trim();
@@ -367,18 +622,34 @@ function addLog() {
     return;
   }
   logHint.textContent = '';
+  logBtn.disabled = true;
 
-  state.logs.push({
-    id: uid(),
+  const payload = {
+     id: crypto.randomUUID(),
+    user_id: state.currentUser.id,
     date: todayStr(),
-    exerciseId: state.selectedLogExerciseId,
+    exercise_id: state.selectedLogExerciseId,
     weight: weight ? parseFloat(weight) : null,
     reps: reps ? parseInt(reps) : null,
-  });
+  };
+  const { data, error } = await supabaseClient
+    .from('logs')
+    .insert(payload)
+    .select('id, date, exercise_id, weight, reps')
+    .single();
+  logBtn.disabled = false;
+
+  if (error) {
+    console.error(error);
+    logHint.textContent = 'Could not save log: ' + error.message;
+    logHint.style.color = 'var(--danger)';
+    return;
+  }
+
+  state.logs.push({ id: data.id, date: data.date, exerciseId: data.exercise_id, weight: data.weight, reps: data.reps });
 
   logWeight.value = '';
   logReps.value = '';
-  save();
 
   // jump the calendar/day-view to today so the new entry is visible
   state.viewMonth = new Date().getMonth();
@@ -389,7 +660,9 @@ function addLog() {
   renderDayDetail();
 }
 
-// ===== CALENDAR =====
+// =============================================
+// CALENDAR
+// =============================================
 function renderWeekdayHeader() {
   calWeekdays.innerHTML = '';
   ['S','M','T','W','T','F','S'].forEach(w => {
@@ -445,7 +718,9 @@ nextMonthBtn.onclick = () => {
   renderCalendar();
 };
 
-// ===== DAY DETAIL (what the calendar takes you to) =====
+// =============================================
+// DAY DETAIL
+// =============================================
 function renderDayDetail() {
   const dateStr = state.selectedDate || todayStr();
   const isToday = dateStr === todayStr();
@@ -488,9 +763,11 @@ function renderDayDetail() {
   });
 }
 
-function deleteLog(id) {
+async function deleteLog(id) {
+  if (!state.currentUser) return;
+  const { error } = await supabaseClient.from('logs').delete().eq('id', id);
+  if (error) { console.error(error); alert('Could not delete log: ' + error.message); return; }
   state.logs = state.logs.filter(l => l.id !== id);
-  save();
   renderCalendar();
   renderDayDetail();
 }
@@ -499,7 +776,107 @@ addExerciseBtn.onclick = addExercise;
 newExerciseInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addExercise(); });
 logBtn.onclick = addLog;
 
-// ===== INIT =====
+// =============================================
+// LOCALSTORAGE MIGRATION
+// -----------------------------------------------
+// Older versions of GymLogs stored data under 'gl2-exercises' / 'gl2-logs' in
+// localStorage. That data is never deleted automatically. Once a user logs in,
+// we check for it and — if present and not already imported for this account —
+// show a banner offering to copy it into Supabase.
+//
+// How it avoids duplicates:
+//  - An exercise is skipped if one with the same name (case-insensitive)
+//    already exists for the user in Supabase.
+//  - A log is skipped if an entry with the same date, mapped exercise,
+//    weight, and reps already exists.
+// A 'gl2-migrated-<userId>' flag is set afterward so the banner doesn't
+// reappear on future logins (re-running is still safe either way).
+// =============================================
+function checkMigrationAvailable() {
+  if (!state.currentUser) return;
+  const migratedFlag = localStorage.getItem('gl2-migrated-' + state.currentUser.id);
+  if (migratedFlag) { migrationBanner.style.display = 'none'; return; }
+
+  const localExercises = JSON.parse(localStorage.getItem('gl2-exercises') || '[]');
+  const localLogs = JSON.parse(localStorage.getItem('gl2-logs') || '[]');
+
+  if (localExercises.length === 0 && localLogs.length === 0) {
+    localStorage.setItem('gl2-migrated-' + state.currentUser.id, '1');
+    migrationBanner.style.display = 'none';
+    return;
+  }
+
+  migrationText.textContent = `Found ${localExercises.length} exercise(s) and ${localLogs.length} log(s) saved in this browser. Import them into your account?`;
+  migrationBanner.style.display = 'block';
+}
+
+async function migrateLocalData() {
+  if (!state.currentUser) return;
+  migrateBtn.disabled = true;
+  migrateBtn.textContent = 'Importing...';
+
+  const localExercises = JSON.parse(localStorage.getItem('gl2-exercises') || '[]');
+  const localLogs = JSON.parse(localStorage.getItem('gl2-logs') || '[]');
+
+  // Maps old localStorage exercise id -> new Supabase exercise id
+  const idMap = {};
+
+  for (const ex of localExercises) {
+    const existing = state.exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase());
+    if (existing) { idMap[ex.id] = existing.id; continue; }
+
+    const { data, error } = await supabaseClient
+      .from('exercises')
+      .insert({
+        id: crypto.randomUUID(),
+        user_id: state.currentUser.id,
+        name: ex.name
+      })
+      .select('id, name')
+      .single();
+    if (error) { console.error(error); continue; }
+    state.exercises.push({ id: data.id, name: data.name });
+    idMap[ex.id] = data.id;
+  }
+
+  for (const log of localLogs) {
+    const newExerciseId = idMap[log.exerciseId];
+    if (!newExerciseId) continue; // its exercise failed to migrate — skip
+
+    const dup = state.logs.some(l =>
+      l.date === log.date && l.exerciseId === newExerciseId &&
+      l.weight === log.weight && l.reps === log.reps
+    );
+    if (dup) continue;
+
+    const payload = {
+      user_id: state.currentUser.id,
+      date: log.date,
+      exercise_id: newExerciseId,
+      weight: log.weight,
+      reps: log.reps,
+    };
+    const { data, error } = await supabaseClient
+      .from('logs')
+      .insert(payload)
+      .select('id, date, exercise_id, weight, reps')
+      .single();
+    if (error) { console.error(error); continue; }
+    state.logs.push({ id: data.id, date: data.date, exerciseId: data.exercise_id, weight: data.weight, reps: data.reps });
+  }
+
+  localStorage.setItem('gl2-migrated-' + state.currentUser.id, '1');
+  migrationBanner.style.display = 'none';
+  migrateBtn.disabled = false;
+  migrateBtn.textContent = 'Import Local Data';
+  renderAll();
+}
+
+migrateBtn.onclick = migrateLocalData;
+
+// =============================================
+// INIT
+// =============================================
 function renderAll() {
   renderExerciseList();
   renderLogPicker();
@@ -508,7 +885,7 @@ function renderAll() {
 }
 
 renderWeekdayHeader();
-renderAll();
+initAuth();
 </script>
 </body>
 </html>
